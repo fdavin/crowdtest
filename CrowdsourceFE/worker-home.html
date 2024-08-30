@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Worker Home</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    <script>
+        // Fetch user information from the server
+        const userId = document.cookie.match(/(?<=id=)\w+/)[0];
+        console.log(userId);
+        fetch(`http://localhost:8080/users/${userId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the header with the logged in username
+            console.log(data);
+            const username = data.name;
+            document.getElementById('username').textContent = `Logged in as ${username}`;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    </script>
+
+    
+</head>
+<body>
+    <header class="header">
+        <strong class="username">CrowdTest</strong>
+        <div></div>
+        <div id="username" style="
+        margin-left: auto;
+        padding: 10px 20px ;">Username</div>
+        <a href="index.html" class="username" style="color: white;">Return to Landing Page</a>
+    </header>
+    <!-- Rest of your HTML content -->
+    <h1 style="margin-left: 10px;">Available Tasks</h1>
+    <div class="task-container">
+        <!-- Fetch tasks from the server -->
+        <script>
+            fetch(`http://localhost:8080/availabletasks`, {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display tasks as cards
+                const tasks = data;
+                const taskContainer = document.querySelector('.task-container');
+                tasks.forEach(task => {
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    const title = document.createElement('h2');
+                    title.textContent = task.name;
+                    const description = document.createElement('p');
+                    description.textContent = task.description;
+                    const updateTime = document.createElement('p');
+                    updateTime.textContent = `Need Update Every: ${task.updateTime} days`;
+                    const deadline = document.createElement('p');
+                    var time = new Date();
+                    deadline.textContent = `Deadline: ${task.deadline}`;
+                    const quota = document.createElement('p');
+                    quota.textContent = `Available quota: ${task.quota}`;
+                    card.appendChild(title);
+                    card.appendChild(description);
+                    card.appendChild(updateTime);
+                    card.appendChild(deadline);
+                    card.appendChild(quota);
+                    // Add button for redirect
+                    const button = document.createElement('button');
+                    button.textContent = 'View task';
+                    button.addEventListener('click', () => {   
+                        document.cookie = "id=" + userId;
+                        window.location.href = `task-detail.html?id=${task.id}`;
+                    });
+                    button.style.cursor = 'pointer'; // Add this line to change cursor on hover
+                    card.appendChild(button);
+                    
+                    taskContainer.appendChild(card);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        </script>
+        <style>
+        .add-task-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            margin-right: auto;
+        }
+        .task-container {
+            display: flex;
+            flex-direction: column; /* Changed flex direction to column */
+            align-items: left; /* Added align items center to center align the cards */
+            padding: 20px 10px; /* Adjusted padding top */
+            border-radius: 5px;
+        }
+        .card button {
+            margin-top: 5px;
+            padding: 10px 20px;
+            background-color: rgb(0, 140, 255);
+            color: white;
+        }
+        .card {
+            width: 1200px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid black;
+        }
+        
+        .card h2 {
+            margin-top: 0;
+        }
+        
+        .card p {
+            margin-bottom: 0;
+        }
+        </style>
+    </div>
+    <h1 style="margin-left: 10px;">Active Assignments</h1>
+    <div class="assignment-container">
+        <script>
+            fetch(`http://localhost:8080/activeAssignment/${userId}`, {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                    console.log(data);
+                const assignments = data;
+                const assignmentContainer = document.querySelector('.assignment-container');
+                assignments.forEach(assignment => {
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    const title = document.createElement('h2');
+                    fetch(`http://localhost:8080/users/${assignment.assigneeId}`, {
+                        method: 'GET',
+                        credentials: 'include'
+                    })
+                    .then(response => response.json())
+                    .then(assigneeData => {
+                        const assigneeName = assigneeData.name;
+                        fetch(`http://localhost:8080/task/${assignment.taskId}`, {
+                            method: 'GET',
+                            credentials: 'include'
+                        }).then(response => response.json())
+                        .then(taskData => {
+                            const taskName = taskData.name;
+                            title.textContent = `Assignment from task ${taskName}`;
+                        })
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                    const progressProof = assignment.progressProof;
+                    const progressProofContent = document.createElement('p');
+                    if (progressProof==""){
+                        progressProofContent.textContent = "No progress proof submitted";
+                    } else {
+                        progressProofContent.textContent = "Progress proof submitted";
+                    }
+                    const completionProof = assignment.completionProof;
+                    const completionProofContent = document.createElement('p');
+                    if (completionProof==""){
+                        completionProofContent.textContent = "No completion proof submitted";
+                    } else {
+                        completionProofContent.textContent = "Completion proof submitted";
+                    }
+                    const currentProgress = assignment.currentProgress;
+                    const progress = document.createElement('progress');
+                    progress.value = currentProgress;
+                    progress.max = 1;
+
+                    const timestamp = assignment.updateDeadline;
+                    const time = new Date(timestamp);
+                    const formattedTime = time.toDateString();
+                    const timeElement = document.createElement('p');
+                    timeElement.textContent = `Deadline: ${formattedTime}`;
+
+                    card.appendChild(title);
+                    card.appendChild(progressProofContent);
+                    card.appendChild(completionProofContent);
+                    card.appendChild(progress);
+        
+                    card.appendChild(timeElement);
+                    // Add button for redirect
+                    const button = document.createElement('button');
+                    button.textContent = 'View assignment';
+                    button.addEventListener('click', () => {
+                        window.location.href = `assignment-detail.html?id=${assignment.id}`;
+                    });
+                    button.style.cursor = 'pointer'; // Add this line to change cursor on hover
+                    
+                    // Add button container div
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.classList.add('button-container');
+                    buttonContainer.appendChild(button);
+                    
+                    card.appendChild(buttonContainer);
+                    
+                    assignmentContainer.appendChild(card);
+
+                });
+                
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        </script>
+        
+        <style>
+        .no-assignment-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center; /* Changed justify content to center */
+            flex-wrap: wrap;
+            padding: 20px 10px;
+            border-radius: 5px;
+            margin-left: 10px;
+            margin-right: 10px;
+            font-size: 100px;
+        }
+        .assignment-container {
+                display: flex;
+                flex-direction: row; /* Changed flex direction to row */
+                align-items: center; /* Added align items center to center align the cards */
+                justify-content: space-between; /* Added justify content to evenly distribute the cards */
+                flex-wrap: wrap; /* Added flex wrap to wrap the cards to the next line */
+                padding: 20px 10px; /* Adjusted padding top */
+                border-radius: 5px;
+                margin-left: 10px;
+                margin-right: 10px;
+            }
+        .card button {
+            margin-top: 5px;
+            padding: 10px 20px;
+            background-color: rgb(0, 140, 255);
+            color: white;
+        }
+        .card {
+            width: 1200px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid black;
+        }
+        
+        .card h2 {
+            margin-top: 0;
+        }
+        
+        .card p {
+            margin-top: auto;
+            margin-bottom: 0;
+        }
+        </style>
+    </div>
+</body>
+</html>

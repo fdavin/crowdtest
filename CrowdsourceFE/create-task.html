@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Task</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+
+</head>
+<body>
+    <script>
+        // Fetch user information from the server
+        const userId = document.cookie.match(/(?<=id=)\w+/)[0];
+        console.log(userId);
+        fetch(`http://localhost:8080/users/${userId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the header with the logged in username
+            console.log(data);
+            const username = data.name;
+            document.getElementById('username').textContent = `Logged in as ${username}`;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+        // Fetch project information from the server
+    </script>
+    <header class="header">
+        <strong class="username" onclick="home()" style="cursor: pointer;">CrowdTest</strong>
+        <script>
+            function home(){
+                document.cookie = "id=" + userId;
+                window.location.href = `requester-home.html`;
+            }
+        </script>
+        <div></div>
+        <div id="username" style="
+        margin-left: auto;
+        padding: 10px 20px ;">Username</div>
+        <a href="index.html" class="username" style="color: white;">Return to Landing Page</a>
+    </header>
+    <h1 style="margin-left: 20px;">Create Task</h1>
+    <form style="display: flex; flex-direction: column; align-items: center;">
+        <label for="name">Task Title:</label>
+        <input type="text" id="name" name="name" required style="width: 300px;"><br><br>
+        
+        <label for="description">Task Description:</label>
+        <textarea id="description" name="description" required style="width: 300px; height: 200px;"></textarea><br><br>
+
+        <label for="exe">Select a file:</label>
+        <input type="file" id="exe" name="filename">
+        <br><br>
+        <label for="testCases">Test Cases:</label>
+        <div id="testCases">
+        </div>
+        <button type="button" onclick="addTestCase()">Add Test Case</button>
+        <br><br>
+        <script>
+
+            function addTestCase() {
+            const testCaseContainer = document.getElementById('testCases');
+            const testCaseDiv = document.createElement('div');
+            testCaseDiv.classList.add('testCase');
+
+            const testCaseNameInput = document.createElement('input');
+            testCaseNameInput.type = 'text';
+            testCaseNameInput.name = 'testCaseName';
+            testCaseNameInput.placeholder = 'Test Case Name';
+            testCaseNameInput.required = true;
+
+            const testCaseDescriptionTextarea = document.createElement('input');
+            testCaseDescriptionTextarea.name = 'testCaseDescription';
+            testCaseDescriptionTextarea.placeholder = 'Test Case Instruction';
+            testCaseDescriptionTextarea.required = true;
+
+            const testCaseInput = document.createElement('input');
+            testCaseInput.type = 'text';
+            testCaseInput.name = 'testCaseInput';
+            testCaseInput.placeholder = 'Test Case Input';
+            testCaseInput.required = true;
+
+            const testCaseOutput = document.createElement('input');
+            testCaseOutput.type = 'text';
+            testCaseOutput.name = 'testCaseOutput';
+            testCaseOutput.placeholder = 'Test Case Expected Output';
+
+            testCaseDiv.appendChild(testCaseNameInput);
+            testCaseDiv.appendChild(testCaseDescriptionTextarea);
+            testCaseDiv.appendChild(testCaseInput);
+            testCaseDiv.appendChild(testCaseOutput);
+            testCaseContainer.appendChild(testCaseDiv);
+        }
+        </script>
+        <label for="duration">Update Deadline (in Days):</label>
+        <input type="number" id="duration" name="duration" required style="width: 300px;"><br><br>
+
+        <label for="quota">Task Quota:</label>
+        <input type="number" id="quota" name="quota" required min="1" style="width: 300px;"><br><br>
+
+        <label for="deadline">Task Deadline:</label>
+        <input type="datetime-local" id="deadline" name="deadline" required style="width: 300px;"><br><br>
+
+        <input type="submit" value="Create" style="width: 100px;">
+    </form>
+    <script>
+        document.querySelector('form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Get form values
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            const projectId = new URLSearchParams(window.location.search).get('id');
+            const exe = 'bin/' + document.getElementById('exe').files[0].name;
+            const duration = document.getElementById('duration').value;
+            const quota = document.getElementById('quota').value;
+            const deadline = document.getElementById('deadline').value.replace('T', ' ')+':00';
+            // Create JSON object
+            const projectData = {
+                name: name,
+                description: description,
+                projectId: projectId,
+                exe: exe,
+                updateTime: duration,
+                quota: quota,
+                deadline: deadline
+            };
+            console.log(JSON.stringify(projectData));
+            // Send project data to server
+            fetch('http://localhost:8080/task', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(projectData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Project created:', data);
+                var fileData = new FormData();
+                fileData.append('file', document.getElementById('exe').files[0]);
+                fetch(`http://localhost:8080/task/upload/${data.id}`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: fileData
+                }).then(response => response.json())
+                .then(data => {
+                    console.log('File uploaded:', data);                
+                    document.cookie = `id=${userId}`;
+                    task_Id = data.id;
+                    var testCases = document.querySelectorAll('.testCase');
+                    testCases.forEach(testCase => {
+                        const testCaseName = testCase.querySelector('input[name="testCaseName"]').value;
+                        const testCaseDescription = testCase.querySelector('input[name="testCaseDescription"]').value;
+                        const testCaseInputValue = testCase.querySelector('input[name="testCaseInput"]').value;
+                        const testCaseOutputValue = testCase.querySelector('input[name="testCaseOutput"]').value;
+                        const testCaseData = {
+                            name: testCaseName,
+                            instruction: testCaseDescription,
+                            input: testCaseInputValue,
+                            output: testCaseOutputValue,
+                            taskId: task_Id
+                        };
+                        console.log(JSON.stringify(testCaseData));
+
+                        fetch(`http://localhost:8080/testcase`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(testCaseData)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Test case created:', data);
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            // Handle error response here
+                        });
+                    });
+
+                    document.cookie = `id=${userId}`;
+                    window.location.href = 'http://localhost:8000/project.html?id='+projectId;
+
+                })
+                .catch(error => {
+                console.error('Error:', error);
+                // Handle error response here
+                });
+                
+                // Handle success response here
+                
+                // Redirect to requester home
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error response here
+            });
+        });
+    </script>
+    <style>
+        .testCase {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        .testCase input {
+            width: 300px;
+            margin-bottom: 5px;
+        }
+
+        .testCases button {
+            width: 100px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+
+        form {
+            width: 300px;
+            margin: auto auto;
+            padding: 20px;
+            padding-right: 20px;
+            background-color: #f2f2f2;
+            color: black;
+            justify-content: center;
+        }
+
+        label {
+            display: block;
+            margin-top: auto;
+            margin-bottom: auto;
+        }
+        input[type="text"] {
+            width: 300px;
+            padding: auto;
+            margin-bottom: auto;
+        }
+
+        input[type="number"] {
+            width: 300px;
+            padding: auto;
+            margin-bottom: auto;
+        }
+
+        input[type="datetime-local"] {
+            width: 300px;
+            padding: auto;
+            margin-bottom: 0px;
+        }
+
+        input[type="file"] {
+            width: 300px;
+            padding: auto;
+            margin-bottom: auto;
+            margin: auto auto;
+        }
+
+        textarea[id="description"] {
+            width: 300px;
+            padding: auto;
+        }
+        input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</body>
+</html>

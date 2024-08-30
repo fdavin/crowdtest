@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Page</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    <script>
+        // Fetch user information from the server
+        var days = 0;
+        const userId = document.cookie.match(/(?<=id=)\w+/)[0];
+        console.log(userId);
+        fetch(`http://localhost:8080/users/${userId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the header with the logged in username
+            console.log(data);
+            const username = data.name;
+            document.getElementById('username').textContent = `Logged in as ${username}`;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+        // Fetch Task information from the server
+        const taskId = new URLSearchParams(window.location.search).get('id');
+        fetch(`http://localhost:8080/task/${taskId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the task content
+            console.log(data);
+            // Update the task title
+            document.title = data.name;
+            // Update the task header
+            document.getElementById('task-title').textContent = data.name;
+            document.getElementById('task-description').textContent = data.description;
+            document.getElementById('task-exe').textContent = `Code executable file: ${data.exe}`;
+            document.getElementById('task-updateTime').textContent = `Requires Update Every : ${data.updateTime} days`;
+            days = data.updateTime;
+            document.getElementById('task-quota').textContent = `Available Quota : ${data.quota}`;
+            document.getElementById('task-deadline').textContent ="Deadline: "+ data.deadline;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    </script>
+    
+</head>
+<body>
+    <header class="header">
+        <strong class="username" onclick="home()" style="cursor: pointer;">CrowdTest</strong>
+        <script>
+            function home(){
+                document.cookie = "id=" + userId;
+                window.location.href = `worker-home.html`;
+            }
+        </script>
+        <div></div>
+        <div id="username" style="
+        margin-left: auto;
+        padding: 10px 20px ;">Username</div>
+        <a href="index.html" class="username" style="color: white;">Return to Landing Page</a>
+    </header>
+    <!-- Paste the header code from index.html here -->
+    <section class="task-content">
+        <h1 id="task-title" style="padding-left: 20px; font-size: 50px;"></h1>
+        <p id="task-description" style="padding-left: 20px; font-size: 20px;"></p>
+        <p id="task-exe" style="padding-left: 20px; font-size: 20px; display: inline-block;">
+        </p><button style="margin-left:20px; font-size: 15px;" onClick="downloadExe()">Download</button>
+        <p id="task-updateTime" style="padding-left: 20px; font-size: 20px;"></p>
+        <p id="task-quota" style="padding-left: 20px; font-size: 20px;"></p>
+        <p id="task-deadline" style="padding-left: 20px; font-size: 20px;"></p>
+        <button id="take-assignment-btn" style="margin-left: 20px; font-size: 15px;">Take Assignment</button>
+    </section>
+        <script>
+            function downloadExe(){
+                fetch(`http://localhost:8080/task/download/${taskId}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                }).then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(new Blob([blob]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', 'task.zip');
+                    document.body.appendChild(link);
+                    link.click();
+                    link.parentNode.removeChild(link);
+                });
+            }
+
+        document.getElementById('take-assignment-btn').addEventListener('click', () => {
+            var time = new Date();
+            time.setDate(time.getDate() + parseInt(days));
+            const formattedTime = time.toISOString().slice(0, 19).replace('T', ' ');
+            const assignmentData = {
+                taskId: taskId,
+                assigneeId: userId,
+                progressProof: "",
+                completeProof: "",
+                currentProgress: 0,
+                updateDeadline: formattedTime
+            };
+
+            fetch('http://localhost:8080/assignment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(assignmentData),
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Assignment created:', data);
+                document.cookie = "id=" + userId;
+                window.location.href = `worker-home.html`;
+                // Handle the response data here
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });</script>
+        
+    </section>
+    <section class="test-case-content">
+        <h1>Test Cases</h1>
+        <script>
+            fetch(`http://localhost:8080/task/${taskId}/testcase`, {
+            method: 'GET',
+            credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+            console.log(data);
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            const tableHeader = document.createElement('tr');
+            tableHeader.innerHTML = `
+                <th>Name</th>
+                <th>Instructions</th>
+                <th>Input</th>
+                <th>Output</th>
+            `;
+            table.appendChild(tableHeader);
+            data.forEach(testCase => {
+                const tableRow = document.createElement('tr');
+                tableRow.innerHTML = `
+                <td>${testCase.name}</td>
+                <td>${testCase.instruction}</td>
+                <td>${testCase.input}</td>
+                <td>${testCase.output}</td>
+                `;
+                table.appendChild(tableRow);
+            });
+            document.getElementById('test-cases').appendChild(table);
+            })
+            .catch(error => {
+            console.error('Error:', error);
+            });
+        </script>
+        <div id="test-cases"></div>
+    </section>
+    <style>
+        .test-case-content {
+            width: 50%;
+            margin: auto;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f2f2f2;
+            color: black;
+            justify-content: center;
+        }
+        .task-content {
+            width: 50%;
+            margin: auto;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f2f2f2;
+            color: black;
+            justify-content: center;
+        }
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button-update{
+            width: 35%;
+            padding: 10px;
+            background-color: #dbbf43;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        /* The popup form - hidden by default */
+    </style></body>
+</html>

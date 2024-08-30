@@ -1,0 +1,140 @@
+
+
+@font-face {
+    font-family: "Inika";
+    src: url("Inika-Regular.ttf");
+}
+@font-face {
+    font-family: "Inika";
+    src: url("Inika-Bold.ttf");
+    font-weight: bold;
+}
+/* Popup container */
+.popup {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+  }
+  
+  /* The actual popup (appears on top) */
+  .popup .popuptext {
+    visibility: hidden;
+    width: 160px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -80px;
+  }
+  
+  /* Popup arrow */
+  .popup .popuptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+  }
+  
+  /* Toggle this class when clicking on the popup container (hide and show the popup) */
+  .popup .show {
+    visibility: visible;
+    -webkit-animation: fadeIn 1s;
+    animation: fadeIn 1s
+  }
+  
+  /* Add animation (fade in the popup) */
+  @-webkit-keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+  
+  @keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity:1 ;}
+  }
+        strong{
+            font-weight: bold;
+            font-size: 35px;
+        }
+        body {
+            font-family: Inika;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: black;
+            color: white;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .logo {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
+        .login-button {
+            margin-left: auto;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .content {
+            display: flex;
+            align-items: center;
+            padding: 50px;
+        }
+        .graphic {
+            width: 60%;
+        }
+        .filler-text-title {
+            font-size: 38px;
+            font-family: "Inika";
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .filler-text {
+            font-size: 28;
+            font-family: "Inika";
+            width: 100%;
+        }
+        .start-testing {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 36px;
+            font-family: "Inika";
+            font-weight: bold;
+        }
+        .login-prompt {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .login-input {
+            margin-bottom: 10px;
+        }
+        .register-link {
+            display: block;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .login-section {
+            text-align: center;
+            margin: 50px auto;
+            width: fit-content;
+        }

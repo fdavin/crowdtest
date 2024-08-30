@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Project</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+
+</head>
+<body>
+    <script>
+        // Fetch user information from the server
+        const userId = document.cookie.match(/(?<=id=)\w+/)[0];
+        console.log(userId);
+        fetch(`http://localhost:8080/users/${userId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the header with the logged in username
+            console.log(data);
+            const username = data.name;
+            document.getElementById('username').textContent = `Logged in as ${username}`;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    </script>
+    <header class="header">
+        <strong class="username" onclick="home()" style="cursor: pointer;">CrowdTest</strong>
+        <script>
+            function home(){
+                document.cookie = "id=" + userId;
+                window.location.href = `requester-home.html`;
+            }
+        </script>
+       <div></div>
+        <div id="username" style="
+        margin-left: auto;
+        padding: 10px 20px ;">Username</div>
+        <a href="index.html" class="username" style="color: white;">Return to Landing Page</a>
+    </header>
+    <h1 style='width: 300px;
+    margin: auto auto;
+    padding: 20px;'>Create Project</h1>
+    <form style="display: flex; flex-direction: column; align-items: center;">
+        <label for="title" style='font-size: 30px; font-family: "Inika";'>Project Title:</label>
+        <input type="text" id="title" name="title" required style="width: 300px;"><br><br>
+        
+        <label for="description" style='font-size: 30px; font-family: "Inika";'>Project Description:</label>
+        <textarea id="description" name="description" required style="width: 300px; height: 200px;"></textarea><br><br>
+        
+        <input type="submit" value="Create" class="button">
+    </form>
+    <script>
+        document.querySelector('form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Get form values
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const requesterId = document.cookie.match(/(?<=id=)\w+/)[0];
+            
+            // Create JSON object
+            const projectData = {
+                title: title,
+                description: description,
+                requesterId: requesterId
+            };
+            
+            // Send project data to server
+            fetch('http://localhost:8080/projects', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(projectData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Project created:', data);
+                // Handle success response here
+                // Redirect to requester home
+                document.cookie = `id=${requesterId}`;
+                window.location.href = 'http://localhost:8000/requester-home.html';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error response here
+            });
+        });
+    </script>
+    <style>
+        form {
+            width: 300px;
+            margin: auto auto;
+            padding: 20px;
+            padding-right: 20px;
+            background-color: #f2f2f2;
+            color: black;
+            justify-content: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        input[type="text"] {
+            width: 300px;
+            padding: auto;
+        }
+
+        textarea[id="description"] {
+            width: 300px;
+            padding: auto;
+        }
+        input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</body>
+</html>

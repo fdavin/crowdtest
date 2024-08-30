@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Assignment Page</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    <script>
+        // Fetch user information from the server
+        var days = 0;
+        const userId = document.cookie.match(/(?<=id=)\w+/)[0];
+        console.log(userId);
+        fetch(`http://localhost:8080/users/${userId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the header with the logged in username
+            console.log(data);
+            const username = data.name;
+            document.getElementById('username').textContent = `Logged in as ${username}`;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+        const assignmentId = new URLSearchParams(window.location.search).get('id');
+        // Fetch assignment information from the server
+        fetch(`http://localhost:8080/assignment/${assignmentId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the assignment content
+            console.log(data);
+            // Update the assignment details
+            taskId = data.taskId;
+            console.log(taskId);
+            if (data.progressProof == '') {
+                document.getElementById('progress-proof').textContent = `Progress Proof: Not Submitted`;
+                document.getElementById('progress-proof-image').style = `display: none;`;
+
+            } else {
+                document.getElementById('progress-proof').textContent = `Progress Proof: ${data.progressProof}`;
+                document.getElementById('progress-proof-image').style = `display: block;`;
+                document.getElementById('progress-proof-image').src = `bin/${data.progressProof}`;
+            }
+            if (data.completionProof == '') {
+                document.getElementById('completion-proof').textContent = `Completion Proof: Not Submitted`;
+                document.getElementById('completion-proof-image').style = `display: none;`;
+            } else {
+                document.getElementById('completion-proof').textContent = `Completion Proof: ${data.completionProof}`;
+                document.getElementById('completion-proof-image').style = `display: block;`;
+                document.getElementById('completion-proof-image').src = `bin/${data.completionProof}`;
+            }
+            console.log(data.currentProgress);
+            if (data.currentProgress == 0) {
+                document.getElementById('current-progress').textContent = `Current Progress: Not Started`;
+                document.getElementById('finish-button').style = `display: none;`;
+            } else if (data.currentProgress == 1) {
+                if (data.completionProof == '') {
+                    document.getElementById('current-progress').textContent = `Current Progress: Completion Proof Required`;
+                    document.getElementById('finish-button').style = `display: none;`;
+                } else {
+                document.getElementById('current-progress').textContent = `Current Progress: Completed`;
+                document.getElementById('finish-button').style = `display: block;`;
+                }
+            } else {
+                document.getElementById('finish-button').style = `display: none;`;
+                document.getElementById('current-progress').textContent = `Current Progress: ${data.currentProgress*100}%`;
+            }
+            document.getElementById('update-deadline').textContent = `Update Deadline: ${data.updateDeadline}`;
+            
+
+            
+        fetch(`http://localhost:8080/task/${data.taskId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the task content
+            console.log(data);
+            // Update the task title
+            document.title = data.name;
+            // Update the task header
+            document.getElementById('task-title').textContent = data.name;
+            document.getElementById('task-description').textContent = data.description;
+            document.getElementById('task-exe').textContent = `Code executable file: ${data.exe}`;
+            document.getElementById('task-updateTime').textContent = `Requires Update Every : ${data.updateTime} days`;
+            days = data.updateTime;
+            document.getElementById('task-quota').textContent = `Available Quota : ${data.quota}`;
+            document.getElementById('task-deadline').textContent ="Deadline: "+ data.deadline;
+            document.getElementById('assignment-title').textContent = "Assignment from "+data.name;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+        
+        fetch(`http://localhost:8080/task/${taskId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the task content
+            console.log(data);
+            // Update the task title
+            document.title = data.name;
+            // Update the task header
+            document.getElementById('task-title').textContent = data.name;
+            document.getElementById('task-description').textContent = data.description;
+            document.getElementById('task-exe').textContent = `Code executable file: ${data.exe}`;
+            document.getElementById('task-updateTime').textContent = `Requires Update Every : ${data.updateTime} days`;
+            days = data.updateTime;
+            document.getElementById('task-quota').textContent = `Available Quota : ${data.quota}`;
+            document.getElementById('task-deadline').textContent ="Deadline: "+ data.deadline;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
+    </script>
+    
+</head>
+<body>
+    <header class="header">
+        <strong class="username" onclick="home()" style="cursor: pointer;">CrowdTest</strong>
+        <script>
+            function home(){
+                document.cookie = "id=" + userId;
+                window.location.href = `requester-home.html`;
+            }
+        </script>        
+        <div></div>
+        <div id="username" style="
+        margin-left: auto;
+        padding: 10px 20px ;">Username</div>
+        <a href="index.html" class="username" style="color: white;">Return to Landing Page</a>
+    </header>
+    <!-- Paste the header code from index.html here -->
+    <section class="assignment-content">
+    <h1 id="assignment-title" style="padding-left: 20px; font-size: 50px;"></h1>
+    <p id="progress-proof" style="padding-left: 20px; font-size: 20px;"></p>
+    <img id="progress-proof-image" style="padding-left: 20px; font-size: 20px;" width="200" height="200" onclick="window.open(this.src)">
+    <p id="completion-proof" style="padding-left: 20px; font-size: 20px;"></p>
+    <img id="completion-proof-image" style="padding-left: 20px; font-size: 20px;" width="200" height="200" onclick="window.open(this.src)">
+    <p id="current-progress" style="padding-left: 20px; font-size: 20px;"></p>
+    <p id="update-deadline" style="padding-left: 20px; font-size: 20px;"></p>
+    <button id="finish-button" style="margin-left: 20px; font-size: 15px;" onclick="finishAssignment()">Finish Assignment</button>
+</section>
+<script>
+    function finishAssignment() {
+        fetch(`http://localhost:8080/assignment/finish/${assignmentId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        })
+        .then(response => {
+            if (response.ok) {
+                // Remove the card from the DOM
+                history.back();
+            } else {
+                console.error('Error:', response.status);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
+    }
+</script>
+
+</section>
+    <section class="task-content">
+        <h1 id="task-title" style="padding-left: 20px; font-size: 50px;"></h1>
+        <p id="task-description" style="padding-left: 20px; font-size: 20px;"></p>
+        <p id="task-exe" style="padding-left: 20px; font-size: 20px;">
+        <p id="task-updateTime" style="padding-left: 20px; font-size: 20px;"></p>
+        <p id="task-quota" style="padding-left: 20px; font-size: 20px;"></p>
+        <p id="task-deadline" style="padding-left: 20px; font-size: 20px;"></p>
+    </section>
+    <style>
+        .assignment-content {
+            width: 50%;
+            margin: auto;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f2f2f2;
+            color: black;
+            justify-content: center;
+        }
+        .task-content {
+            width: 50%;
+            margin: auto;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f2f2f2;
+            color: black;
+            justify-content: center;
+        }
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button-update{
+            width: 35%;
+            padding: 10px;
+            background-color: #dbbf43;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+    </style>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Requester Home</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    <script>
+        // Fetch user information from the server
+        const userId = document.cookie.match(/(?<=id=)\w+/)[0];
+        console.log(userId);
+        fetch(`http://localhost:8080/users/${userId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the header with the logged in username
+            console.log(data);
+            const username = data.name;
+            document.getElementById('username').textContent = `Logged in as ${username}`;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    </script>
+
+    
+</head>
+<body>
+    <header class="header">
+        <strong class="username">CrowdTest</strong>
+        <div></div>
+        <div id="username" style="
+        margin-left: auto;
+        padding: 10px 20px ;">Username</div>
+        <a href="index.html" class="username" style="color: white;">Return to Landing Page</a>
+    </header>
+    <!-- Rest of your HTML content -->
+    <h1 style="margin-left: 10px;">Projects</h1>
+    <div class="project-container">
+        <!-- Fetch projects from the server -->
+        <script>
+            fetch(`http://localhost:8080/projects/user/${userId}`, {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display projects as cards
+                const projects = data;
+                const projectContainer = document.querySelector('.project-container');
+                projects.forEach(project => {
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    const title = document.createElement('h2');
+                    title.textContent = project.title;
+                    const description = document.createElement('p');
+                    description.textContent = project.description;
+                    card.appendChild(title);
+                    card.appendChild(description);
+                    
+                    // Add button for redirect
+                    const button = document.createElement('button');
+                    button.textContent = 'View Project';
+                    button.addEventListener('click', () => {   
+                        document.cookie = "id=" + userId;
+                        window.location.href = `project.html?id=${project.id}`;
+                    });
+                    button.style.cursor = 'pointer'; // Add this line to change cursor on hover
+                    card.appendChild(button);
+                    
+                    projectContainer.appendChild(card);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        </script>
+        <style>
+        .add-project-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            margin-right: auto;
+        }
+        .project-container {
+            display: flex;
+            flex-direction: column; /* Changed flex direction to column */
+            align-items: left; /* Added align items center to center align the cards */
+            padding: 20px 10px; /* Adjusted padding top */
+            border-radius: 5px;
+        }
+        .card button {
+            margin-top: 5px;
+            padding: 10px 20px;
+            background-color: rgb(0, 140, 255);
+            color: white;
+        }
+        .card {
+            width: 1200px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid black;
+        }
+        
+        .card h2 {
+            margin-top: 0;
+        }
+        
+        .card p {
+            margin-bottom: 0;
+        }
+        </style>
+    </div>
+    <button class="add-project-button" onclick="document.cookie = 'id=' + userId; window.location.href = 'create-project.html'">Add Project</button>
+</body>
+</html>

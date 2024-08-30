@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Assignment Page</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    <script>
+        // Fetch user information from the server
+        var days = 0;
+        const userId = document.cookie.match(/(?<=id=)\w+/)[0];
+        console.log(userId);
+        fetch(`http://localhost:8080/users/${userId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the header with the logged in username
+            console.log(data);
+            const username = data.name;
+            document.getElementById('username').textContent = `Logged in as ${username}`;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+        const assignmentId = new URLSearchParams(window.location.search).get('id');
+        // Fetch assignment information from the server
+        var taskId = new Number();
+        fetch(`http://localhost:8080/assignment/${assignmentId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the assignment content
+            console.log(data);
+            // Update the assignment details
+            taskId = data.taskId;
+            console.log(taskId);
+            if (data.progressProof == '') {
+                document.getElementById('progress-proof').textContent = `Progress Proof: Not Submitted`;
+            } else {
+                document.getElementById('progress-proof').textContent = `Progress Proof: ${data.progressProof}`;
+            }
+            if (data.completionProof == '') {
+                document.getElementById('completion-proof').textContent = `Completion Proof: Not Submitted`;
+            } else {
+                document.getElementById('completion-proof').textContent = `Completion Proof: ${data.completionProof}`;
+            }
+            console.log(data.currentProgress);
+            if (data.currentProgress == 0) {
+                document.getElementById('current-progress').textContent = `Current Progress: Not Started`;
+            } else if (data.currentProgress == 1) {
+                document.getElementById('current-progress').textContent = `Current Progress: Completed`;
+            } else {
+                document.getElementById('current-progress').textContent = `Current Progress: ${data.currentProgress*100}%`;
+            }
+            document.getElementById('update-deadline').textContent = `Update Deadline: ${data.updateDeadline}`;
+
+            fetch(`http://localhost:8080/task/${data.taskId}/testcase`, {
+            method: 'GET',
+            credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+            console.log(data);
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            const tableHeader = document.createElement('tr');
+            tableHeader.innerHTML = `
+                <th>Name</th>
+                <th>Instructions</th>
+                <th>Input</th>
+                <th>Output</th>
+            `;
+            table.appendChild(tableHeader);
+            data.forEach(testCase => {
+                const tableRow = document.createElement('tr');
+                tableRow.innerHTML = `
+                <td>${testCase.name}</td>
+                <td>${testCase.instruction}</td>
+                <td>${testCase.input}</td>
+                <td>${testCase.output}</td>
+                `;
+                table.appendChild(tableRow);
+            });
+            document.getElementById('test-cases').appendChild(table);
+            })
+        .catch(error => {
+        console.error('Error:', error);
+        });
+            
+        fetch(`http://localhost:8080/task/${data.taskId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the task content
+            console.log(data);
+            // Update the task title
+            document.title = data.name;
+            // Update the task header
+            document.getElementById('task-title').textContent = data.name;
+            document.getElementById('task-description').textContent = data.description;
+            document.getElementById('task-exe').textContent = `Code executable file: ${data.exe}`;
+            document.getElementById('task-updateTime').textContent = `Requires Update Every : ${data.updateTime} days`;
+            days = data.updateTime;
+            document.getElementById('task-quota').textContent = `Available Quota : ${data.quota}`;
+            document.getElementById('task-deadline').textContent ="Deadline: "+ data.deadline;
+            console.log(data.testCaseIds.length);
+            document.getElementById('progress-slider').max = data.testCaseIds.length;
+            document.getElementById('assignment-title').textContent = "Assignment from "+data.name;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+            
+
+        function downloadExe(){
+                fetch(`http://localhost:8080/task/download/${taskId}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                }).then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(new Blob([blob]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', 'task.zip');
+                    document.body.appendChild(link);
+                    link.click();
+                    link.parentNode.removeChild(link);
+                });
+            }
+    </script>
+    
+</head>
+<body>
+    <header class="header">
+        <strong class="username" onclick="home()" style="cursor: pointer;">CrowdTest</strong>
+        <script>
+            function home(){
+                document.cookie = "id=" + userId;
+                window.location.href = `worker-home.html`;
+            }
+        </script>        
+        <div></div>
+        <div id="username" style="
+        margin-left: auto;
+        padding: 10px 20px ;">Username</div>
+        <a href="index.html" class="username" style="color: white;">Return to Landing Page</a>
+    </header>
+    <!-- Paste the header code from index.html here -->
+    <section class="assignment-content">
+    <h1 id="assignment-title" style="padding-left: 20px; font-size: 50px;"></h1>
+    <p id="progress-proof" style="padding-left: 20px; font-size: 20px;"></p>
+    <p id="completion-proof" style="padding-left: 20px; font-size: 20px;"></p>
+    <p id="current-progress" style="padding-left: 20px; font-size: 20px;"></p>
+    <p id="update-deadline" style="padding-left: 20px; font-size: 20px;"></p>
+    <button class="button-update" onclick=openForm() style="margin-left: 20px; font-size: 15px;">Update Progress</button>
+</section>
+    <div class="form-popup" id="myForm">
+        <form class="form-container">
+          <h1>Update Progress</h1>
+      
+          <label for="progress-proof"><b>Progress Proof</b></label>
+          <input type="file" placeholder="Enter Progress Proof" name="progress-proof" required>
+      
+          <label for="completion-proof"><b>Completion Proof</b></label>
+          <input type="file" placeholder="Enter Completion Proof" name="completion-proof">
+
+          <label for="current-progress"><b>Current Progress : </b></label>
+            <input type="range" id="progress-slider" name="current-progress" required min="0" onchange="updateProgress()">
+
+          <button type="submit" class="btn">Update</button>
+          <script>document.querySelector('.form-container').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const progressProof = document.querySelector('input[name="progress-proof"]').files[0].name;
+            console.log(document.querySelector('input[name="completion-proof"]').files[0]);
+            var completionProof = '';
+            if (document.querySelector('input[name="completion-proof"]').files[0] != undefined) {
+                completionProof = document.querySelector('input[name="completion-proof"]').files[0].name;
+            }
+            const currentProgress = document.querySelector('input[name="current-progress"]').value/document.querySelector('input[name="current-progress"]').max;
+            const assignmentId = new URLSearchParams(window.location.search).get('id');
+            
+            fetch(`http://localhost:8080/assignment/update/${assignmentId}`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    progressProof: progressProof,
+                    completionProof: completionProof,
+                    currentProgress: currentProgress
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                window.location.reload();
+                document.cookie = `id=${userId}`;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+        </script>
+          <button type="button" class="btn cancel" onclick="closeForm()">Close</button>
+        </form>
+      </div>
+      
+    <script>
+        function openForm() {
+        document.getElementById("myForm").style.display = "block";
+        document.querySelector('label[for="current-progress"]').textContent = `Current Progress : ${document.querySelector('input[name="current-progress"]').value} / ${document.querySelector('input[name="current-progress"]').max}`;
+
+        }
+    function updateProgress() {
+        document.querySelector('label[for="current-progress"]').textContent = `Current Progress : ${document.querySelector('input[name="current-progress"]').value} / ${document.querySelector('input[name="current-progress"]').max}`;
+    }
+        function closeForm() {
+        document.getElementById("myForm").style.display = "none";
+        }
+
+    </script>
+
+</section>
+    <section class="task-content">
+        <h1 id="task-title" style="padding-left: 20px; font-size: 50px;"></h1>
+        <p id="task-description" style="padding-left: 20px; font-size: 20px;"></p>
+        <p id="task-exe" style="padding-left: 20px; font-size: 20px; display: inline-block;">
+        </p><button style="margin-left:20px; font-size: 15px;" onClick="downloadExe()">Download</button>
+        <p id="task-updateTime" style="padding-left: 20px; font-size: 20px;"></p>
+        <p id="task-quota" style="padding-left: 20px; font-size: 20px;"></p>
+        <p id="task-deadline" style="padding-left: 20px; font-size: 20px;"></p>
+    </section>
+    <section class="test-case-content">
+        <h1>Test Cases</h1>
+        <div id="test-cases"></div>
+    </section>
+    <style>
+.test-case-content {
+            width: 50%;
+            margin: auto;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f2f2f2;
+            color: black;
+            justify-content: center;
+        }
+        .assignment-content {
+            width: 50%;
+            margin: auto;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f2f2f2;
+            color: black;
+            justify-content: center;
+        }
+        .task-content {
+            width: 50%;
+            margin: auto;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f2f2f2;
+            color: black;
+            justify-content: center;
+        }
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button-update{
+            width: 35%;
+            padding: 10px;
+            background-color: #dbbf43;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+
+        /* The popup form - hidden by default */
+.form-popup {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  right: 15px;
+  border: 3px solid #f1f1f1;
+  z-index: 9;
+}
+
+/* Add styles to the form container */
+.form-container {
+  max-width: 300px;
+  padding: 10px;
+  background-color: white;
+}
+
+/* Full-width input fields */
+.form-container input[type=file], .form-container input[type=range] {
+  width: 90%;
+  padding: 15px;
+  margin: 5px 0 22px 0;
+  border: none;
+  background: #f1f1f1;
+}
+
+/* When the inputs get focus, do something */
+.form-container input[type=text]:focus, .form-container input[type=range]:focus {
+  background-color: #ddd;
+  outline: none;
+}
+
+/* Set a style for the submit/login button */
+.form-container .btn {
+  background-color: #04AA6D;
+  color: white;
+  padding: 16px 20px;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom:10px;
+  opacity: 0.8;
+}
+
+/* Add a red background color to the cancel button */
+.form-container .cancel {
+  background-color: red;
+}
+
+/* Add some hover effects to buttons */
+.form-container .btn:hover, .open-button:hover {
+  opacity: 1;
+}
+    </style>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Project Page</title>
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    <script>
+        // Fetch user information from the server
+        const userId = document.cookie.match(/(?<=id=)\w+/)[0];
+        console.log(userId);
+        fetch(`http://localhost:8080/users/${userId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the header with the logged in username
+            console.log(data);
+            const username = data.name;
+            document.getElementById('username').textContent = `Logged in as ${username}`;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+        // Fetch project information from the server
+        const projectId = new URLSearchParams(window.location.search).get('id');
+        fetch(`http://localhost:8080/projects/${projectId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the project content
+            console.log(data);
+            // Update the project title
+            document.title = data.title;
+            // Update the project header
+            document.getElementById('project-title').textContent = data.title;
+            document.getElementById('project-description').textContent = data.description;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    </script>
+    
+</head>
+<body>
+    <header class="header">
+        <strong class="username" onclick="home()" style="cursor: pointer;">CrowdTest</strong>
+        <script>
+            function home(){
+                document.cookie = "id=" + userId;
+                window.location.href = `requester-home.html`;
+            }
+        </script>
+        <div></div>
+        <div id="username" style="
+        margin-left: auto;
+        padding: 10px 20px ;">Username</div>
+        <a href="index.html" class="username" style="color: white;">Return to Landing Page</a>
+    </header>
+    <!-- Paste the header code from index.html here -->
+    <section class="project-content"></section>
+        <h1 id="project-title" style="padding-left: 20px; font-size: 50px;"></h1>
+        <p id="project-description" style="padding-left: 20px; font-size: 20px;"></p>
+    </section>
+    <!-- Add the rest of your project content here -->
+    <div class="task-container">
+        <!-- Fetch projects from the server -->
+        <script>
+            fetch(`http://localhost:8080/task/project/${projectId}`, {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display tasks as cards
+                const tasks = data;
+                const taskContainer = document.querySelector('.task-container');
+                tasks.forEach(task => {
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    const title = document.createElement('h2');
+                    title.textContent = task.name;
+                    const description = document.createElement('p');
+                    description.textContent = task.description;
+                    const quota = document.createElement('p');
+                    quota.textContent = `Quota: ${task.quota}`;
+                    const deadline = document.createElement('p');
+                    deadline.textContent = `Deadline: ${task.deadline}`;
+                    card.appendChild(title);
+                    card.appendChild(description);
+                    card.appendChild(quota);
+                    card.appendChild(deadline);
+                    
+                    // Add button for redirect
+                    const button = document.createElement('button');
+                    button.textContent = 'View task';
+                    button.addEventListener('click', () => {
+                        document.cookie = "id=" + userId;
+                        window.location.href = `task.html?id=${task.id}`;
+                    });
+                    button.style.cursor = 'pointer'; // Add this line to change cursor on hover
+                    card.appendChild(button);
+                    
+                    // Add delete button if deadline > today
+                    // format of task.deadline is yyyy-mm-dd HH:mm:ss
+                    const today = new Date();
+                    const formatedDeadline = task.deadline.replace(' ', 'T');
+                    if (new Date(formatedDeadline) < today) {
+                        const deleteButton = document.createElement('delete-button');
+                        deleteButton.textContent = 'Delete task';
+                        deleteButton.addEventListener('click', () => {
+                            // Implement delete task functionality here
+                            fetch(`http://localhost:8080/task/${task.id}`, {
+                                method: 'DELETE',
+                                credentials: 'include'
+                            })
+                            .then(response => {
+                                if (response.ok) {
+                                    // Remove the card from the DOM
+                                    card.remove();
+                                } else {
+                                    console.error('Error:', response.status);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                            });
+                        });
+                        deleteButton.style.cursor = 'pointer';
+                        card.appendChild(deleteButton);
+                    }
+
+                    taskContainer.appendChild(card);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        </script>
+        
+        <style>
+            
+            .task-container {
+                display: flex;
+                flex-direction: column; /* Changed flex direction to column */
+                align-items: left; /* Added align items center to center align the cards */
+                padding: 20px 10px; /* Adjusted padding top */
+                border-radius: 5px;
+                margin-left: 10px;
+                margin-right: 10px;
+            }
+        .card button {
+            margin-top: 5px;
+            padding: 10px 20px;
+            background-color: rgb(0, 140, 255);
+            color: white;
+        }
+        .card {
+            width: 1200px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid black;
+        }
+        
+        .card h2 {
+            margin-top: 0;
+        }
+        
+        .card p {
+            margin-bottom: 0;
+        }
+
+        .card delete-button {
+            margin-left: 80%;
+            padding: 10px 20px;
+            background-color: rgb(255, 0, 0);
+            color: white;
+        }
+        .add-task-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            margin-right: auto;
+        }
+        </style>
+    </div>
+    <button class="add-task-button" onclick="document.cookie = 'id=' + userId; window.location.href = `create-task.html?id=${projectId}`">Add Task</button>
+</body>
+</html>
